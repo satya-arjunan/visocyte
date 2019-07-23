@@ -1,11 +1,31 @@
-/*
- * Copyright 2007 Sandia Corporation.
- * Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
- * license for use of this work by or on behalf of the
- * U.S. Government. Redistribution and use in source and binary forms, with
- * or without modification, are permitted provided that this Notice and any
- * statement of authorship are reproduced on all copies.
- */
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//
+//        This file is part of Visocyte
+//
+//        Copyright (C) 2019 Satya N.V. Arjunan
+//
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//
+//
+// Motocyte is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later version.
+// 
+// Motocyte is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public
+// License along with Motocyte -- see the file COPYING.
+// If not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+// 
+//END_HEADER
+//
+// written by Satya N. V. Arjunan <satya.arjunan@gmail.com>
+//
 
 #include <QTimer>
 #include <QIcon>
@@ -16,7 +36,7 @@
 #include <vtkQtTableView.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
-#include "vtkSmartPointer.h"
+#include <vtkSmartPointer.h>
 #include <vtkVectorText.h>
 #include <vtkActor.h>
 #include <vtkProperty.h>
@@ -51,7 +71,7 @@ Viewer::Viewer():
   points_(vtkSmartPointer<vtkPoints>::New()),
   polydata_(vtkSmartPointer<vtkPolyData>::New()),
   renderer_(vtkSmartPointer<vtkRenderer>::New()),
-  reader_(vtkSmartPointer<vtkDelimitedTextReader>::New()),
+  reader_(vtkSmartPointer<ImarisReader>::New()),
   glyphFilter_(vtkSmartPointer<vtkVertexGlyphFilter>::New()),
   mapper_(vtkSmartPointer<vtkPolyDataMapper>::New()),
   actor_(vtkSmartPointer<vtkActor>::New()),
@@ -92,11 +112,7 @@ Viewer::Viewer():
   }
 
 void Viewer::read_file(std::string input_file_name) {
-  reader_->SetFileName(input_file_name.c_str());
-  reader_->DetectNumericColumnsOn();
-  reader_->SetFieldDelimiterCharacters(",");
-  reader_->Update();
-  table_ = reader_->GetOutput();
+  reader_->initialize(this, input_file_name);
   initialize();
 }
 
@@ -105,8 +121,10 @@ void Viewer::read_spatiocyte_file(std::string input_file_name) {
   reader_->DetectNumericColumnsOn();
   reader_->SetFieldDelimiterCharacters(",");
   reader_->Update();
+  /*
   table_ = reader_->GetOutput();
   std::cout << "columns:" << table_->GetNumberOfColumns() << std::endl;
+  */
 }
 
 void Viewer::write_png() {
@@ -124,7 +142,7 @@ void Viewer::write_png() {
 }
 
 void Viewer::initialize() {
-  init_points();
+  initialize_points();
   polydata_->SetPoints(points_);
   glyphFilter_->SetInputData(polydata_);
   glyphFilter_->Update();
@@ -162,64 +180,11 @@ void Viewer::update_random_points() {
   }
 }
 
-void Viewer::init_points() {
-  const int skip_rows(2); //skip first two header rows
-  int time_column(0); //look for time column
-  for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
-    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Time") {
-      time_column = i;
-    }
-    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Parent" ||
-        (table_->GetValue(skip_rows-1, i)).ToString() == "TrackID") {
-      id_column_ = i;
-    }
-  }
-  int time(0);
-  double minx(1e+10);
-  double miny(1e+10);
-  double minz(1e+10);
-  double maxx(-1e+10);
-  double maxy(-1e+10);
-  double maxz(-1e+10);
-  if (skip_rows < table_->GetNumberOfRows()) { 
-    time = (table_->GetValue(skip_rows, time_column)).ToDouble();
-    frames_.push_back(skip_rows);
-  }
-  int cnt(skip_rows);
-  while(cnt < table_->GetNumberOfRows()) {
-    if ((table_->GetValue(cnt, time_column)).ToDouble() != time) {
-        frames_.push_back(cnt);
-        time = (table_->GetValue(cnt, time_column)).ToDouble();
-    }
-    minx = std::min(minx, (table_->GetValue(cnt, 0)).ToDouble());
-    maxx = std::max(maxx, (table_->GetValue(cnt, 0)).ToDouble());
-    miny = std::min(miny, (table_->GetValue(cnt, 1)).ToDouble());
-    maxy = std::max(maxy, (table_->GetValue(cnt, 1)).ToDouble());
-    minz = std::min(minz, (table_->GetValue(cnt, 2)).ToDouble());
-    maxz = std::max(maxz, (table_->GetValue(cnt, 2)).ToDouble());
-    int id((table_->GetValue(cnt, id_column_)).ToInt());
-    if (std::find(ids_.begin(), ids_.end(), id) == ids_.end()) {
-      ids_.push_back(id);
-      ids_map_[id] = ids_.size()-1;
-    }
-    ++cnt;
-  }
-  frames_.push_back(cnt-1);
+void Viewer::initialize_points() {
+  reader_->initialize_points(frames_, ids_, ids_map_);
   current_frame_ = 0;
   init_colors();
   update_points();
-
-  double ave(0);
-  for (unsigned i(0); i != frames_.size(); ++i) {
-    std::cout << "i:" << i << " " << frames_[i] << std::endl;
-    if (i > 0) {
-      ave += frames_[i] - frames_[i-1];
-    }
-  }
-  std::cout << "average cells per frame:" << ave/(frames_.size()-1) <<
-    std::endl;
-  std::cout << "dims:" << maxx-minx << " " << maxy-miny << " " << maxz-minz <<
-    std::endl;
 }
 
 void Viewer::inc_dec_frame() {
@@ -234,31 +199,7 @@ void Viewer::inc_dec_frame() {
 }
 
 void Viewer::update_points() {
-  //std::cout << "frame:" << current_frame_ << std::endl;
-  const int n_surface(300);
-  const double radius(5);
-  int n(frames_[current_frame_+1]-frames_[current_frame_]);
-  points_->SetNumberOfPoints(n+n*n_surface);
-  colors_->SetNumberOfValues(n+n*n_surface);
-  std::uniform_real_distribution<> uni_z(-1, 1);
-  std::uniform_real_distribution<> uni_t(0, 2*M_PI);
-  for (unsigned i(0); i < n; ++i) {
-    int row(i+frames_[current_frame_]);
-    const float x((table_->GetValue(row,0)).ToDouble());
-    const float y((table_->GetValue(row,1)).ToDouble());
-    const float z((table_->GetValue(row,2)).ToDouble());
-    points_->SetPoint(i, x, y, z);
-    insert_color((table_->GetValue(row,id_column_)).ToInt(), i);
-    for (unsigned j(0); j != n_surface; ++j) {
-      float zi(uni_z(rng_));
-      float t(uni_t(rng_));
-      points_->SetPoint(n+i*n_surface+j, 
-                        x+sqrt(1-pow(zi,2))*cos(t)*radius,
-                        y+sqrt(1-pow(zi,2))*sin(t)*radius,
-                        z+zi*radius);
-      insert_color((table_->GetValue(row,id_column_)).ToInt(), n+i*n_surface+j);
-    }
-  }
+  reader_->update_points(frames_, current_frame_, points_, colors_, rng_);
   polydata_->GetPointData()->SetScalars(colors_);
 }
 

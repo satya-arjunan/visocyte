@@ -12,10 +12,14 @@ endif ()
 # Set your files and resources here
 set(Srcs
   Viewer.cpp
-  Visocyte.cpp)
+  Visocyte.cpp
+  ImarisReader.cpp
+  )
 
 set(Hdrs
-  Viewer.hpp)
+  Viewer.hpp
+  ImarisReader.hpp
+  )
 
 set(UIs
   Viewer.ui)
