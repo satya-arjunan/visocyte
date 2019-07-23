@@ -28,8 +28,8 @@
 #include <vtkPNGWriter.h>
 #include <vtkWindowToImageFilter.h>
 #include "vtkAutoInit.h" 
-#include "ui_SimpleView.h"
-#include "SimpleView.h"
+#include "ui_Viewer.h"
+#include <Viewer.hpp>
 #include <limits>
 #include <QStyle>
 
@@ -38,7 +38,7 @@ VTK_MODULE_INIT(vtkRenderingOpenGL2)
 VTK_MODULE_INIT(vtkInteractionStyle);
 VTK_MODULE_INIT(vtkRenderingFreeType);
 
-SimpleView::SimpleView():
+Viewer::Viewer():
   is_forward_(true),
   is_playing_(false), 
   is_active_timeout_(false),
@@ -61,7 +61,7 @@ SimpleView::SimpleView():
   colors_(vtkSmartPointer<vtkUnsignedCharArray>::New()),
   time_text_(vtkSmartPointer<vtkTextActor>::New()),
   timer_(new QTimer(this)) {
-    this->ui_ = new Ui_SimpleView;
+    this->ui_ = new Ui_Viewer;
     this->ui_->setupUi(this);
     this->ui_->progressSlider->setFocusPolicy(Qt::StrongFocus);
     this->ui_->progressSlider->setSingleStep(1);
@@ -91,7 +91,7 @@ SimpleView::SimpleView():
     timer_->setInterval(1);
   }
 
-void SimpleView::read_file(std::string input_file_name) {
+void Viewer::read_file(std::string input_file_name) {
   reader_->SetFileName(input_file_name.c_str());
   reader_->DetectNumericColumnsOn();
   reader_->SetFieldDelimiterCharacters(",");
@@ -100,7 +100,16 @@ void SimpleView::read_file(std::string input_file_name) {
   initialize();
 }
 
-void SimpleView::write_png() {
+void Viewer::read_spatiocyte_file(std::string input_file_name) {
+  reader_->SetFileName(input_file_name.c_str());
+  reader_->DetectNumericColumnsOn();
+  reader_->SetFieldDelimiterCharacters(",");
+  reader_->Update();
+  table_ = reader_->GetOutput();
+  std::cout << "columns:" << table_->GetNumberOfColumns() << std::endl;
+}
+
+void Viewer::write_png() {
   vtkSmartPointer<vtkWindowToImageFilter> windowToImage = 
     vtkSmartPointer<vtkWindowToImageFilter>::New();
   windowToImage->SetInput(this->ui_->qvtkWidget->renderWindow());
@@ -114,7 +123,7 @@ void SimpleView::write_png() {
   writer->Write();
 }
 
-void SimpleView::initialize() {
+void Viewer::initialize() {
   init_points();
   polydata_->SetPoints(points_);
   glyphFilter_->SetInputData(polydata_);
@@ -138,7 +147,7 @@ void SimpleView::initialize() {
   on_timeout();
 };
 
-void SimpleView::init_random_points() {
+void Viewer::init_random_points() {
   const unsigned n(300000);
   points_->SetNumberOfPoints(n);
   for (unsigned i(0); i < n; ++i) {
@@ -146,14 +155,14 @@ void SimpleView::init_random_points() {
   }
 }
 
-void SimpleView::update_random_points() {
+void Viewer::update_random_points() {
   const unsigned n(300000);
   for (unsigned i(0); i < n; ++i) {
     points_->SetPoint(i, uni_(rng_), uni_(rng_), uni_(rng_)); 
   }
 }
 
-void SimpleView::init_points() {
+void Viewer::init_points() {
   const int skip_rows(2); //skip first two header rows
   int time_column(0); //look for time column
   for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
@@ -213,7 +222,7 @@ void SimpleView::init_points() {
     std::endl;
 }
 
-void SimpleView::inc_dec_frame() {
+void Viewer::inc_dec_frame() {
   if (is_initialized_) {
     if (is_forward_) {
       current_frame_ = std::min(current_frame_+1, int(frames_.size()-2));
@@ -224,7 +233,7 @@ void SimpleView::inc_dec_frame() {
   }
 }
 
-void SimpleView::update_points() {
+void Viewer::update_points() {
   //std::cout << "frame:" << current_frame_ << std::endl;
   const int n_surface(300);
   const double radius(5);
@@ -253,7 +262,7 @@ void SimpleView::update_points() {
   polydata_->GetPointData()->SetScalars(colors_);
 }
 
-void SimpleView::insert_color(int id, int index) {
+void Viewer::insert_color(int id, int index) {
   double dcolor[3];
   color_table_->GetColor(ids_map_[id], dcolor);
   /*
@@ -268,7 +277,7 @@ void SimpleView::insert_color(int id, int index) {
   colors_->InsertTypedTuple(index, color);
 }
 
-void SimpleView::init_colors() {
+void Viewer::init_colors() {
   //color_table_->SetNumberOfColors(ids_.size());
   //color_table_->SetHueRange(0.0,0.667);
   color_table_->SetTableRange(0, ids_.size());
@@ -278,9 +287,9 @@ void SimpleView::init_colors() {
 }
 
 
-SimpleView::~SimpleView() {}
+Viewer::~Viewer() {}
 
-void SimpleView::timeout_add() {
+void Viewer::timeout_add() {
   if (is_initialized_ && !is_active_timeout_) {
     timer_->start();
     is_active_timeout_ = true;
@@ -288,7 +297,7 @@ void SimpleView::timeout_add() {
   }
 }
 
-void SimpleView::timeout_remove() {
+void Viewer::timeout_remove() {
   if (is_initialized_ && is_active_timeout_) {
     timer_->stop();
     is_active_timeout_ = false;
@@ -296,7 +305,7 @@ void SimpleView::timeout_remove() {
   }
 }
 
-void SimpleView::set_frame(int value) {
+void Viewer::set_frame(int value) {
   if (is_initialized_) {
     if(is_playing_) {
       pause();
@@ -311,7 +320,7 @@ void SimpleView::set_frame(int value) {
   }
 }
 
-void SimpleView::set_progress_frame(int current_frame) {
+void Viewer::set_progress_frame(int current_frame) {
   if(current_frame > this->ui_->progressSlider->maximum()) {
     this->ui_->progressSlider->setMaximum(current_frame);
   }
@@ -320,7 +329,7 @@ void SimpleView::set_progress_frame(int current_frame) {
   }
 }
 
-void SimpleView::on_timeout() {
+void Viewer::on_timeout() {
   inc_dec_frame(); 
   update_points(); 
   points_->Modified();
@@ -331,7 +340,7 @@ void SimpleView::on_timeout() {
   record_frame();
 }
 
-void SimpleView::write_time() {
+void Viewer::write_time() {
   double time((current_frame_-1)*frame_interval_);
   std::stringstream ss;
   if(fabs(time) < 1e-3)
@@ -363,7 +372,7 @@ void SimpleView::write_time() {
   time_text_->SetInput(ss.str().c_str());
 }
 
-void SimpleView::record_frame() {
+void Viewer::record_frame() {
   if (is_record_) {
     timeout_remove();
     write_png();
@@ -372,7 +381,7 @@ void SimpleView::record_frame() {
   }
 }
 
-void SimpleView::set_unset_record() {
+void Viewer::set_unset_record() {
   is_record_ = !is_record_;
   if (is_record_) {
     std::cout << "starting to save png frames..." << std::endl;
@@ -381,18 +390,18 @@ void SimpleView::set_unset_record() {
   }
 }
 
-void SimpleView::progress_slider_value_changed(int value) {
+void Viewer::progress_slider_value_changed(int value) {
   if (is_initialized_ && current_frame_ != value) {
     set_frame(value);
   }
 }
 
-void SimpleView::open_file() { 
+void Viewer::open_file() { 
   QString filename =  QFileDialog::getOpenFileName(
                  this,
                  "Open file",
                  QDir::currentPath(),
-                 "CSV files (*.csv);; Binary files (*.dat)");
+                 "CSV files (*.csv);; Spatiocyte files (*.spa)");
   if (!filename.isNull()) {
     QFileInfo fi(filename);
     std::string csv("csv");
@@ -402,10 +411,14 @@ void SimpleView::open_file() {
         std::endl;
       read_file(filename.toUtf8().constData());
     }
+    else if (fi.suffix().toUtf8().constData() == std::string("spa")) {
+      reset();
+      read_spatiocyte_file(filename.toUtf8().constData());
+    }
   }
 }
 
-void SimpleView::reset() {
+void Viewer::reset() {
   timeout_remove();
   frames_.resize(0);
   ids_.resize(0);
@@ -416,11 +429,11 @@ void SimpleView::reset() {
   current_frame_ = 1;
 }
 
-void SimpleView::exit() {
+void Viewer::exit() {
   qApp->exit();
 }
 
-void SimpleView::pause() {
+void Viewer::pause() {
   if(is_initialized_) {
     play_button_->setDefaultAction(play_action_);
     is_playing_ = false;
@@ -428,7 +441,7 @@ void SimpleView::pause() {
   }
 }
 
-void SimpleView::play() {
+void Viewer::play() {
   if(is_initialized_) {
     play_button_->setDefaultAction(pause_action_);
     is_playing_ = true;
@@ -436,7 +449,7 @@ void SimpleView::play() {
   }
 }
 
-void SimpleView::step() {
+void Viewer::step() {
   if(is_initialized_) {
     if(is_playing_) {
       pause();
@@ -445,7 +458,7 @@ void SimpleView::step() {
   }
 }
 
-void SimpleView::play_or_pause() {
+void Viewer::play_or_pause() {
   if(is_initialized_) {
     if(is_playing_) {
       pause();
@@ -456,7 +469,7 @@ void SimpleView::play_or_pause() {
   }
 }
 
-void SimpleView::keyPressEvent(QKeyEvent *event)
+void Viewer::keyPressEvent(QKeyEvent *event)
 {
   switch (event->key()) {
   case Qt::Key_Pause:

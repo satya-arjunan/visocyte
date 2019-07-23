@@ -1,6 +1,6 @@
 <ui version="4.0" >
- <class>SimpleView</class>
- <widget class="QMainWindow" name="SimpleView" >
+ <class>Viewer</class>
+ <widget class="QMainWindow" name="Viewer" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -10,7 +10,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Motocyte Viewer</string>
+   <string>Visocyte</string>
   </property>
   <property name="windowIcon" >
    <iconset resource="Icons/icons.qrc" >:/Icons/help.png</iconset>

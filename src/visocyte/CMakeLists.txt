@@ -11,14 +11,14 @@ endif ()
 
 # Set your files and resources here
 set(Srcs
-  SimpleView.cxx
-  main.cxx)
+  Viewer.cpp
+  Visocyte.cpp)
 
 set(Hdrs
-  SimpleView.h)
+  Viewer.hpp)
 
 set(UIs
-  SimpleView.ui)
+  Viewer.ui)
 
 set(QRCs
   Icons/icons.qrc)

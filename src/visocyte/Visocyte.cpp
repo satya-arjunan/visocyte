@@ -11,7 +11,7 @@
 #include <QtGui/QSurfaceFormat>
 
 #include "QVTKOpenGLWidget.h"
-#include "SimpleView.h"
+#include "Viewer.hpp"
 
 extern int qInitResources_icons();
 
@@ -28,8 +28,8 @@ int main( int argc, char** argv )
 
   qInitResources_icons();
 
-  SimpleView mySimpleView;
-  mySimpleView.show();
+  Viewer viewer;
+  viewer.show();
 
   return app.exec();
 }

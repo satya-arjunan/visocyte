@@ -1,23 +1,39 @@
-/*=========================================================================
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//
+//        This file is part of Visocyte
+//
+//        Copyright (C) 2019 Satya N.V. Arjunan
+//
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+//
+//
+// Motocyte is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public
+// License as published by the Free Software Foundation; either
+// version 2 of the License, or (at your option) any later version.
+// 
+// Motocyte is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public
+// License along with Motocyte -- see the file COPYING.
+// If not, write to the Free Software Foundation, Inc.,
+// 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+// 
+//END_HEADER
+//
+// written by Satya N. V. Arjunan <satya.arjunan@gmail.com>
+//
 
-  Program:   Visualization Toolkit
-  Module:    SimpleView.h
-  Language:  C++
 
-  Copyright 2009 Sandia Corporation.
-  Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-  license for use of this work by or on behalf of the
-  U.S. Government. Redistribution and use in source and binary forms, with
-  or without modification, are permitted provided that this Notice and any
-  statement of authorship are reproduced on all copies.
-
-=========================================================================*/
-#ifndef SimpleView_H
-#define SimpleView_H
+#ifndef __Viewer_hpp
+#define __Viewer_hpp
 
 #include <random>
 #include <map>
-#include "vtkSmartPointer.h"    // Required for smart pointer internal ivars.
+#include "vtkSmartPointer.h"
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QAction>
@@ -32,15 +48,15 @@
 #include <vtkTextProperty.h>
 #include "vtkGenericOpenGLRenderWindow.h"
 
-class Ui_SimpleView;
+class Ui_Viewer;
 class vtkQtTableView;
 
-class SimpleView : public QMainWindow
+class Viewer : public QMainWindow
 {
   Q_OBJECT
 public:
-  SimpleView();
-  ~SimpleView() override;
+  Viewer();
+  ~Viewer() override;
 
 public slots:
   virtual void open_file();
@@ -67,6 +83,7 @@ protected:
   void write_png();
   void step();
   void read_file(std::string input_file_name);
+  void read_spatiocyte_file(std::string input_file_name);
   void initialize();
   void reset();
   void set_unset_record();
@@ -91,7 +108,7 @@ private:
   std::uniform_real_distribution<> uni_;
   vtkTable* table_;
   vtkSmartPointer<vtkQtTableView> tableview_;
-  Ui_SimpleView *ui_;
+  Ui_Viewer *ui_;
   int timer_id_;
   int current_frame_;
   std::vector<int> frames_;
@@ -118,4 +135,4 @@ private:
   QToolButton* open_button_;
 };
 
-#endif // SimpleView_H
+#endif /* __Viewer_hpp */
