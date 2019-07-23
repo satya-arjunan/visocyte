@@ -30,16 +30,12 @@
 
 #include <ImarisReader.hpp>
 #include <Viewer.hpp>
-#include <vtkDelimitedTextReader.h>
-
 
 vtkStandardNewMacro(ImarisReader);
 
-ImarisReader::ImarisReader() {
-}
+ImarisReader::ImarisReader() {}
 
-ImarisReader::~ImarisReader() {
-}
+ImarisReader::~ImarisReader() {}
 
 void ImarisReader::initialize(Viewer* viewer, std::string input_file_name) {
   viewer_ = viewer;
@@ -50,9 +46,10 @@ void ImarisReader::initialize(Viewer* viewer, std::string input_file_name) {
   table_ = GetOutput();
 }
 
-void ImarisReader::initialize_points(std::vector<int>& frames,
-                                     std::vector<int>& ids,
-                                     std::map<int, int>& ids_map) {
+void ImarisReader::initialize_points() {
+  std::vector<int>& frames(viewer_->get_frames());
+  std::vector<int>& ids(viewer_->get_ids());
+  std::map<int, int>& ids_map(viewer_->get_ids_map());
   const int skip_rows(2); //skip first two header rows
   int time_column(0); //look for time column
   for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
@@ -108,10 +105,11 @@ void ImarisReader::initialize_points(std::vector<int>& frames,
     std::endl;
 }
 
-void ImarisReader::update_points(std::vector<int>& frames, int current_frame, 
-                                 vtkSmartPointer<vtkPoints> points, 
-                                 vtkSmartPointer<vtkUnsignedCharArray> colors,
-                                 std::mt19937_64& rng) {
+void ImarisReader::update_points(int current_frame) {
+  std::vector<int>& frames(viewer_->get_frames()); 
+  vtkSmartPointer<vtkPoints> points(viewer_->get_points()); 
+  vtkSmartPointer<vtkUnsignedCharArray> colors(viewer_->get_colors());
+  std::mt19937_64& rng(viewer_->get_rng());
   const int n_surface(300);
   const double radius(5);
   int n(frames[current_frame+1]-frames[current_frame]);

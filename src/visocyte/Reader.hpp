@@ -28,26 +28,24 @@
 //
 
 
-#ifndef __ImarisReader_hpp
-#define __ImarisReader_hpp
+#ifndef __Reader_hpp
+#define __Reader_hpp
 
-#include <map>
-#include <random>
-#include <Reader.hpp>
-#include <vtkSmartPointer.h>
-#include <vtkPoints.h>
-#include <vtkUnsignedCharArray.h> 
+#include <vtkDelimitedTextReader.h>
 
-class ImarisReader : public Reader {
+class Viewer;
+
+class Reader : public vtkDelimitedTextReader {
 public:
-  static ImarisReader* New();
-  ImarisReader();
-  ~ImarisReader();
-  virtual void initialize(Viewer* viewer, std::string input_file_name);
-  virtual void initialize_points();
-  virtual void update_points(int current_frame);
-private:
-  int id_column_;
+  static Reader* New();
+  Reader();
+  ~Reader();
+  virtual void initialize(Viewer* viewer, std::string input_file_name) {};
+  virtual void initialize_points() {};
+  virtual void update_points(int current_frame) {};
+protected:
+  Viewer* viewer_;
+  vtkTable* table_;
 };
 
-#endif /* __ImarisReader_hpp */
+#endif /* __Reader_hpp */

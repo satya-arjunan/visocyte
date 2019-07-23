@@ -33,7 +33,8 @@
 
 #include <random>
 #include <map>
-#include "vtkSmartPointer.h"
+#include <Reader.hpp>
+#include <vtkSmartPointer.h>
 #include <QMainWindow>
 #include <QKeyEvent>
 #include <QAction>
@@ -41,7 +42,6 @@
 #include <vtkPoints.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkTable.h>
-#include <ImarisReader.hpp>
 #include <vtkDataObjectToTable.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkTextActor.h>
@@ -78,6 +78,13 @@ public slots:
   virtual void play();
   virtual void pause();
   virtual void play_or_pause();
+  std::vector<int>& get_frames();
+  std::vector<int>& get_ids();
+  std::map<int, int>& get_ids_map();
+  vtkSmartPointer<vtkPoints>& get_points();
+  vtkSmartPointer<vtkUnsignedCharArray>& get_colors();
+  std::mt19937_64& get_rng();
+
 
 protected:
   void write_png();
@@ -114,7 +121,7 @@ private:
   std::map<int, int> ids_map_;
   vtkSmartPointer<vtkPoints> points_;
   vtkSmartPointer<vtkPolyData> polydata_;
-  vtkSmartPointer<ImarisReader> reader_;
+  vtkSmartPointer<Reader> reader_;
   vtkSmartPointer<vtkUnsignedCharArray> colors_;
   vtkSmartPointer<vtkLookupTable> color_table_;
   vtkSmartPointer<vtkRenderer> renderer_;

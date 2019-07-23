@@ -28,26 +28,12 @@
 //
 
 
-#ifndef __ImarisReader_hpp
-#define __ImarisReader_hpp
-
-#include <map>
-#include <random>
 #include <Reader.hpp>
-#include <vtkSmartPointer.h>
-#include <vtkPoints.h>
-#include <vtkUnsignedCharArray.h> 
+#include <Viewer.hpp>
 
-class ImarisReader : public Reader {
-public:
-  static ImarisReader* New();
-  ImarisReader();
-  ~ImarisReader();
-  virtual void initialize(Viewer* viewer, std::string input_file_name);
-  virtual void initialize_points();
-  virtual void update_points(int current_frame);
-private:
-  int id_column_;
-};
+vtkStandardNewMacro(Reader);
 
-#endif /* __ImarisReader_hpp */
+Reader::Reader() {}
+
+Reader::~Reader() {}
+

@@ -13,12 +13,14 @@ endif ()
 set(Srcs
   Viewer.cpp
   Visocyte.cpp
+  Reader.cpp
   ImarisReader.cpp
   )
 
 set(Hdrs
   Viewer.hpp
   ImarisReader.hpp
+  Reader.hpp
   )
 
 set(UIs

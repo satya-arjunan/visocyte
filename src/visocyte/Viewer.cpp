@@ -50,6 +50,7 @@
 #include "vtkAutoInit.h" 
 #include "ui_Viewer.h"
 #include <Viewer.hpp>
+#include <ImarisReader.hpp>
 #include <limits>
 #include <QStyle>
 
@@ -71,7 +72,7 @@ Viewer::Viewer():
   points_(vtkSmartPointer<vtkPoints>::New()),
   polydata_(vtkSmartPointer<vtkPolyData>::New()),
   renderer_(vtkSmartPointer<vtkRenderer>::New()),
-  reader_(vtkSmartPointer<ImarisReader>::New()),
+  reader_(vtkSmartPointer<Reader>::New()),
   glyphFilter_(vtkSmartPointer<vtkVertexGlyphFilter>::New()),
   mapper_(vtkSmartPointer<vtkPolyDataMapper>::New()),
   actor_(vtkSmartPointer<vtkActor>::New()),
@@ -181,7 +182,7 @@ void Viewer::update_random_points() {
 }
 
 void Viewer::initialize_points() {
-  reader_->initialize_points(frames_, ids_, ids_map_);
+  reader_->initialize_points();
   current_frame_ = 0;
   init_colors();
   update_points();
@@ -199,7 +200,7 @@ void Viewer::inc_dec_frame() {
 }
 
 void Viewer::update_points() {
-  reader_->update_points(frames_, current_frame_, points_, colors_, rng_);
+  reader_->update_points(current_frame_);
   polydata_->GetPointData()->SetScalars(colors_);
 }
 
@@ -350,6 +351,7 @@ void Viewer::open_file() {
       reset();
       std::cout << "extension:" << fi.suffix().toUtf8().constData() <<
         std::endl;
+      reader_ = vtkSmartPointer<ImarisReader>::New();
       read_file(filename.toUtf8().constData());
     }
     else if (fi.suffix().toUtf8().constData() == std::string("spa")) {
@@ -448,3 +450,28 @@ void Viewer::keyPressEvent(QKeyEvent *event)
     QWidget::keyPressEvent(event);
   }
 }
+
+std::vector<int>& Viewer::get_frames() {
+  return frames_;
+}
+
+std::vector<int>& Viewer::get_ids() {
+  return ids_;
+}
+
+std::map<int, int>& Viewer::get_ids_map() {
+  return ids_map_;
+}
+
+vtkSmartPointer<vtkPoints>& Viewer::get_points() {
+  return points_;
+}
+
+vtkSmartPointer<vtkUnsignedCharArray>& Viewer::get_colors() {
+  return colors_;
+}
+
+std::mt19937_64& Viewer::get_rng() {
+  return rng_;
+}
+  
