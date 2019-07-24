@@ -90,7 +90,6 @@ protected:
   void write_png();
   void step();
   void read_file(std::string input_file_name);
-  void read_spatiocyte_file(std::string input_file_name);
   void initialize();
   void reset();
   void set_unset_record();

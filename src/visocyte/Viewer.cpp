@@ -51,6 +51,7 @@
 #include "ui_Viewer.h"
 #include <Viewer.hpp>
 #include <ImarisReader.hpp>
+#include <SpatiocyteReader.hpp>
 #include <limits>
 #include <QStyle>
 
@@ -72,7 +73,6 @@ Viewer::Viewer():
   points_(vtkSmartPointer<vtkPoints>::New()),
   polydata_(vtkSmartPointer<vtkPolyData>::New()),
   renderer_(vtkSmartPointer<vtkRenderer>::New()),
-  reader_(vtkSmartPointer<Reader>::New()),
   glyphFilter_(vtkSmartPointer<vtkVertexGlyphFilter>::New()),
   mapper_(vtkSmartPointer<vtkPolyDataMapper>::New()),
   actor_(vtkSmartPointer<vtkActor>::New()),
@@ -115,17 +115,6 @@ Viewer::Viewer():
 void Viewer::read_file(std::string input_file_name) {
   reader_->initialize(this, input_file_name);
   initialize();
-}
-
-void Viewer::read_spatiocyte_file(std::string input_file_name) {
-  reader_->SetFileName(input_file_name.c_str());
-  reader_->DetectNumericColumnsOn();
-  reader_->SetFieldDelimiterCharacters(",");
-  reader_->Update();
-  /*
-  table_ = reader_->GetOutput();
-  std::cout << "columns:" << table_->GetNumberOfColumns() << std::endl;
-  */
 }
 
 void Viewer::write_png() {
@@ -348,15 +337,16 @@ void Viewer::open_file() {
     QFileInfo fi(filename);
     std::string csv("csv");
     if (fi.suffix().toUtf8().constData() == csv) {
-      reset();
       std::cout << "extension:" << fi.suffix().toUtf8().constData() <<
         std::endl;
+      reset();
       reader_ = vtkSmartPointer<ImarisReader>::New();
       read_file(filename.toUtf8().constData());
     }
     else if (fi.suffix().toUtf8().constData() == std::string("spa")) {
       reset();
-      read_spatiocyte_file(filename.toUtf8().constData());
+      reader_ = vtkSmartPointer<SpatiocyteReader>::New();
+      read_file(filename.toUtf8().constData());
     }
   }
 }
