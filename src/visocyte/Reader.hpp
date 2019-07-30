@@ -43,6 +43,7 @@ public:
   virtual void initialize(Viewer* viewer, std::string input_file_name) {};
   virtual void initialize_points() {};
   virtual void update_points(int current_frame) {};
+  virtual void reset() {};
 protected:
   Viewer* viewer_;
   vtkTable* table_;

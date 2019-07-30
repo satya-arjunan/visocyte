@@ -72,6 +72,7 @@ Viewer::Viewer():
   uni_(-5, 5),
   points_(vtkSmartPointer<vtkPoints>::New()),
   polydata_(vtkSmartPointer<vtkPolyData>::New()),
+  reader_(vtkSmartPointer<Reader>::New()),
   renderer_(vtkSmartPointer<vtkRenderer>::New()),
   glyphFilter_(vtkSmartPointer<vtkVertexGlyphFilter>::New()),
   mapper_(vtkSmartPointer<vtkPolyDataMapper>::New()),
@@ -172,15 +173,14 @@ void Viewer::update_random_points() {
 
 void Viewer::initialize_points() {
   reader_->initialize_points();
-  current_frame_ = 0;
+  current_frame_ = -1;
   init_colors();
-  update_points();
 }
 
 void Viewer::inc_dec_frame() {
   if (is_initialized_) {
     if (is_forward_) {
-      current_frame_ = std::min(current_frame_+1, int(frames_.size()-2));
+      current_frame_ = std::min(current_frame_+1, int(frames_.size()-1));
     }
     else {
       current_frame_ = std::max(current_frame_-1, 0);
@@ -193,9 +193,10 @@ void Viewer::update_points() {
   polydata_->GetPointData()->SetScalars(colors_);
 }
 
-void Viewer::insert_color(int id, int index) {
+void Viewer::insert_color(const unsigned color_index,
+                          const unsigned agent_index) {
   double dcolor[3];
-  color_table_->GetColor(ids_map_[id], dcolor);
+  color_table_->GetColor(color_index, dcolor);
   /*
   dcolor[0] = 1;
   dcolor[1] = 0;
@@ -205,7 +206,7 @@ void Viewer::insert_color(int id, int index) {
   for(unsigned int j = 0; j < 3; j++) {
     color[j] = static_cast<unsigned char>(255.0 * dcolor[j]);
   }
-  colors_->InsertTypedTuple(index, color);
+  colors_->InsertTypedTuple(agent_index, color);
 }
 
 void Viewer::init_colors() {
@@ -273,6 +274,9 @@ void Viewer::on_timeout() {
 
 void Viewer::write_time() {
   double time((current_frame_-1)*frame_interval_);
+  if (times_.size()) {
+    time = times_[current_frame_];
+  }
   std::stringstream ss;
   if(fabs(time) < 1e-3)
     {
@@ -355,7 +359,7 @@ void Viewer::reset() {
   timeout_remove();
   frames_.resize(0);
   ids_.resize(0);
-  ids_map_.clear();
+  reader_->reset();
   is_forward_ = true;
   is_playing_ = false;
   is_initialized_ = false;
@@ -449,8 +453,8 @@ std::vector<int>& Viewer::get_ids() {
   return ids_;
 }
 
-std::map<int, int>& Viewer::get_ids_map() {
-  return ids_map_;
+std::vector<double>& Viewer::get_times() {
+  return times_;
 }
 
 vtkSmartPointer<vtkPoints>& Viewer::get_points() {
@@ -464,4 +468,4 @@ vtkSmartPointer<vtkUnsignedCharArray>& Viewer::get_colors() {
 std::mt19937_64& Viewer::get_rng() {
   return rng_;
 }
-  
+

@@ -46,8 +46,10 @@ public:
   virtual void initialize(Viewer* viewer, std::string input_file_name);
   virtual void initialize_points();
   virtual void update_points(int current_frame);
+  virtual void reset();
 private:
   int id_column_;
+  std::map<int, int> ids_map_;
 };
 
 #endif /* __ImarisReader_hpp */

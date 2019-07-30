@@ -46,10 +46,12 @@ void SpatiocyteReader::initialize(Viewer* viewer, std::string input_file_name) {
   table_ = GetOutput();
 }
 
+//replace frames with times
+
 void SpatiocyteReader::initialize_points() {
   std::vector<int>& frames(viewer_->get_frames());
-  std::vector<int>& ids(viewer_->get_ids());
-  std::map<int, int>& ids_map(viewer_->get_ids_map());
+  std::vector<int>& ids(viewer_->get_ids()); //species id
+  std::vector<double>& times(viewer_->get_times());
 
   const unsigned ncolumns(table_->GetNumberOfColumns());
 
@@ -57,91 +59,69 @@ void SpatiocyteReader::initialize_points() {
   voxel_radius_ = ::atof(split(radius_str, "=")[1].c_str());
   for (unsigned i(1); i < ncolumns-1; ++i) { 
     species_list_.push_back((table_->GetValue(0, i)).ToString());
+    //push species id
+    ids.push_back(i-1);
   }
-
-  const int skip_rows(1); //skip first two header rows
-  int time_column(0); //look for time column
-  for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
-    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Time") {
-      time_column = i;
-    }
-    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Parent" ||
-        (table_->GetValue(skip_rows-1, i)).ToString() == "TrackID") {
-      id_column_ = i;
-    }
+  const int skip_rows(1); //skip first header row
+  const int time_column(0); //look for time column
+  for (unsigned i(skip_rows); i < table_->GetNumberOfRows(); ++i) {
+    double time((table_->GetValue(i, time_column)).ToDouble());
+    times.push_back(time);
+    frames.push_back(i);
   }
-  int time(0);
-  double minx(1e+10);
-  double miny(1e+10);
-  double minz(1e+10);
-  double maxx(-1e+10);
-  double maxy(-1e+10);
-  double maxz(-1e+10);
-  if (skip_rows < table_->GetNumberOfRows()) { 
-    time = (table_->GetValue(skip_rows, time_column)).ToDouble();
-    frames.push_back(skip_rows);
-  }
-  int cnt(skip_rows);
-  while(cnt < table_->GetNumberOfRows()) {
-    if ((table_->GetValue(cnt, time_column)).ToDouble() != time) {
-        frames.push_back(cnt);
-        time = (table_->GetValue(cnt, time_column)).ToDouble();
-    }
-    minx = std::min(minx, (table_->GetValue(cnt, 0)).ToDouble());
-    maxx = std::max(maxx, (table_->GetValue(cnt, 0)).ToDouble());
-    miny = std::min(miny, (table_->GetValue(cnt, 1)).ToDouble());
-    maxy = std::max(maxy, (table_->GetValue(cnt, 1)).ToDouble());
-    minz = std::min(minz, (table_->GetValue(cnt, 2)).ToDouble());
-    maxz = std::max(maxz, (table_->GetValue(cnt, 2)).ToDouble());
-    int id((table_->GetValue(cnt, id_column_)).ToInt());
-    if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
-      ids.push_back(id);
-      ids_map[id] = ids.size()-1;
-    }
-    ++cnt;
-  }
-  frames.push_back(cnt-1);
-  double ave(0);
-  for (unsigned i(0); i != frames.size(); ++i) {
-    std::cout << "i:" << i << " " << frames[i] << std::endl;
-    if (i > 0) {
-      ave += frames[i] - frames[i-1];
-    }
-  }
-  std::cout << "average cells per frame:" << ave/(frames.size()-1) <<
-    std::endl;
-  std::cout << "dims:" << maxx-minx << " " << maxy-miny << " " << maxz-minz <<
-    std::endl;
 }
+
+
 
 void SpatiocyteReader::update_points(int current_frame) {
   std::vector<int>& frames(viewer_->get_frames()); 
   vtkSmartPointer<vtkPoints> points(viewer_->get_points()); 
   vtkSmartPointer<vtkUnsignedCharArray> colors(viewer_->get_colors());
   std::mt19937_64& rng(viewer_->get_rng());
-  const int n_surface(300);
-  const double radius(5);
-  int n(frames[current_frame+1]-frames[current_frame]);
-  points->SetNumberOfPoints(n+n*n_surface);
-  colors->SetNumberOfValues(n+n*n_surface);
+  const int n_surface(300); //number of points on molecule surface
+  const double radius(voxel_radius_);
+  const unsigned row(frames[current_frame]);
+  if (molecule_sizes_.size() <= current_frame) {
+    unsigned molecule_size(0);
+    for (unsigned i(1); i < species_list_.size()+1; ++i) { 
+      std::string coord_str((table_->GetValue(row, i)).ToString());
+      if (coord_str.size()) {
+        std::vector<std::string> coords_str(split(coord_str, " "));
+        molecule_size += coords_str.size()/3; //3D coordinates
+      }
+    }
+    molecule_sizes_.push_back(molecule_size);
+  }
+  const unsigned molecule_size(molecule_sizes_[current_frame]);
+  points->SetNumberOfPoints(molecule_size+molecule_size*n_surface);
+  colors->SetNumberOfValues(molecule_size+molecule_size*n_surface);
   std::uniform_real_distribution<> uni_z(-1, 1);
   std::uniform_real_distribution<> uni_t(0, 2*M_PI);
-  for (unsigned i(0); i < n; ++i) {
-    int row(i+frames[current_frame]);
-    const float x((table_->GetValue(row,0)).ToDouble());
-    const float y((table_->GetValue(row,1)).ToDouble());
-    const float z((table_->GetValue(row,2)).ToDouble());
-    points->SetPoint(i, x, y, z);
-    viewer_->insert_color((table_->GetValue(row,id_column_)).ToInt(), i);
-    for (unsigned j(0); j != n_surface; ++j) {
-      float zi(uni_z(rng));
-      float t(uni_t(rng));
-      points->SetPoint(n+i*n_surface+j, 
-                        x+sqrt(1-pow(zi,2))*cos(t)*radius,
-                        y+sqrt(1-pow(zi,2))*sin(t)*radius,
-                        z+zi*radius);
-      viewer_->insert_color((table_->GetValue(row,id_column_)).ToInt(),
-                           n+i*n_surface+j);
+  unsigned cnt(0);
+  for (unsigned i(1); i < species_list_.size()+1; ++i) { 
+    std::string coord_str((table_->GetValue(row, i)).ToString());
+    std::vector<std::string> coords_str(split(coord_str, " "));
+    if (coords_str.size() >= 3) {
+      for (unsigned j(0); j < coords_str.size(); ) {
+        const float x(::atof(coords_str[j].c_str()));
+        const float y(::atof(coords_str[j+1].c_str()));
+        const float z(::atof(coords_str[j+2].c_str()));
+        j += 3;
+        points->SetPoint(cnt, x, y, z);
+        const unsigned species_index(i-1);
+        viewer_->insert_color(species_index, cnt);
+        for (unsigned k(0); k < n_surface; ++k) {
+          float zi(uni_z(rng));
+          float t(uni_t(rng));
+          points->SetPoint(molecule_size+cnt*n_surface+k, 
+                            x+sqrt(1-pow(zi,2))*cos(t)*radius,
+                            y+sqrt(1-pow(zi,2))*sin(t)*radius,
+                            z+zi*radius);
+          viewer_->insert_color(species_index, molecule_size+cnt*n_surface+k);
+        }
+        ++cnt;
+      }
     }
   }
 }
+

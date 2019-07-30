@@ -49,7 +49,6 @@ void ImarisReader::initialize(Viewer* viewer, std::string input_file_name) {
 void ImarisReader::initialize_points() {
   std::vector<int>& frames(viewer_->get_frames());
   std::vector<int>& ids(viewer_->get_ids());
-  std::map<int, int>& ids_map(viewer_->get_ids_map());
   const int skip_rows(2); //skip first two header rows
   int time_column(0); //look for time column
   for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
@@ -87,14 +86,13 @@ void ImarisReader::initialize_points() {
     int id((table_->GetValue(cnt, id_column_)).ToInt());
     if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
       ids.push_back(id);
-      ids_map[id] = ids.size()-1;
+      ids_map_[id] = ids.size()-1;
     }
     ++cnt;
   }
   frames.push_back(cnt-1);
   double ave(0);
   for (unsigned i(0); i != frames.size(); ++i) {
-    std::cout << "i:" << i << " " << frames[i] << std::endl;
     if (i > 0) {
       ave += frames[i] - frames[i-1];
     }
@@ -123,7 +121,9 @@ void ImarisReader::update_points(int current_frame) {
     const float y((table_->GetValue(row,1)).ToDouble());
     const float z((table_->GetValue(row,2)).ToDouble());
     points->SetPoint(i, x, y, z);
-    viewer_->insert_color((table_->GetValue(row,id_column_)).ToInt(), i);
+    const unsigned color_index(ids_map_[
+                               (table_->GetValue(row,id_column_)).ToInt()]);
+    viewer_->insert_color(color_index, i);
     for (unsigned j(0); j != n_surface; ++j) {
       float zi(uni_z(rng));
       float t(uni_t(rng));
@@ -131,8 +131,11 @@ void ImarisReader::update_points(int current_frame) {
                         x+sqrt(1-pow(zi,2))*cos(t)*radius,
                         y+sqrt(1-pow(zi,2))*sin(t)*radius,
                         z+zi*radius);
-      viewer_->insert_color((table_->GetValue(row,id_column_)).ToInt(),
-                           n+i*n_surface+j);
+      viewer_->insert_color(color_index, n+i*n_surface+j);
     }
   }
+}
+
+void ImarisReader::reset() {
+  ids_map_.clear();
 }

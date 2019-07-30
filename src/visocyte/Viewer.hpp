@@ -64,7 +64,8 @@ public slots:
   virtual void progress_slider_value_changed(int);
   virtual void initialize_points();
   virtual void init_colors();
-  virtual void insert_color(int id, int index);
+  virtual void insert_color(const unsigned color_index,
+                            const unsigned agent_index);
   virtual void update_points();
   virtual void init_random_points();
   virtual void update_random_points();
@@ -80,7 +81,7 @@ public slots:
   virtual void play_or_pause();
   std::vector<int>& get_frames();
   std::vector<int>& get_ids();
-  std::map<int, int>& get_ids_map();
+  std::vector<double>& get_times();
   vtkSmartPointer<vtkPoints>& get_points();
   vtkSmartPointer<vtkUnsignedCharArray>& get_colors();
   std::mt19937_64& get_rng();
@@ -117,7 +118,7 @@ private:
   int current_frame_;
   std::vector<int> frames_;
   std::vector<int> ids_;
-  std::map<int, int> ids_map_;
+  std::vector<double> times_;
   vtkSmartPointer<vtkPoints> points_;
   vtkSmartPointer<vtkPolyData> polydata_;
   vtkSmartPointer<Reader> reader_;

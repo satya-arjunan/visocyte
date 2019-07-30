@@ -47,6 +47,7 @@ private:
   int id_column_;
   double voxel_radius_;
   std::vector<std::string> species_list_;
+  std::vector<unsigned> molecule_sizes_;
 };
 
 #endif /* __SpatiocyteReader_hpp */
