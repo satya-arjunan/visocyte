@@ -104,6 +104,7 @@ void ImarisReader::initialize_points() {
 }
 
 void ImarisReader::update_points(int current_frame) {
+  std::cout << "current_frame:" << current_frame << std::endl;
   std::vector<int>& frames(viewer_->get_frames()); 
   vtkSmartPointer<vtkPoints> points(viewer_->get_points()); 
   vtkSmartPointer<vtkUnsignedCharArray> colors(viewer_->get_colors());
@@ -138,4 +139,8 @@ void ImarisReader::update_points(int current_frame) {
 
 void ImarisReader::reset() {
   ids_map_.clear();
+}
+
+int ImarisReader::get_offset() {
+  return 2;
 }

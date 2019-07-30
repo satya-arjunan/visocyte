@@ -47,6 +47,7 @@ public:
   virtual void initialize_points();
   virtual void update_points(int current_frame);
   virtual void reset();
+  virtual int get_offset();
 private:
   int id_column_;
   std::map<int, int> ids_map_;

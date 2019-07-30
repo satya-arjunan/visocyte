@@ -154,6 +154,8 @@ void Viewer::initialize() {
   to_table_->SetFieldType(vtkDataObjectToTable::POINT_DATA);
   is_initialized_ = true;
   on_timeout();
+  renderer_->ResetCamera();
+  this->ui_->qvtkWidget->interactor()->Render();
 };
 
 void Viewer::init_random_points() {
@@ -180,7 +182,8 @@ void Viewer::initialize_points() {
 void Viewer::inc_dec_frame() {
   if (is_initialized_) {
     if (is_forward_) {
-      current_frame_ = std::min(current_frame_+1, int(frames_.size()-1));
+      current_frame_ = std::min(current_frame_+1, int(frames_.size()-
+                                                      reader_->get_offset()));
     }
     else {
       current_frame_ = std::max(current_frame_-1, 0);
@@ -273,7 +276,7 @@ void Viewer::on_timeout() {
 }
 
 void Viewer::write_time() {
-  double time((current_frame_-1)*frame_interval_);
+  double time((current_frame_)*frame_interval_);
   if (times_.size()) {
     time = times_[current_frame_];
   }

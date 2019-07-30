@@ -37,3 +37,6 @@ Reader::Reader() {}
 
 Reader::~Reader() {}
 
+int Reader::get_offset() {
+  return 1;
+}

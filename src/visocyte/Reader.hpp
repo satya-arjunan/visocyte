@@ -44,6 +44,7 @@ public:
   virtual void initialize_points() {};
   virtual void update_points(int current_frame) {};
   virtual void reset() {};
+  virtual int get_offset();
 protected:
   Viewer* viewer_;
   vtkTable* table_;
