@@ -49,9 +49,11 @@ void ImarisReader::initialize(Viewer* viewer, std::string input_file_name) {
 void ImarisReader::initialize_points() {
   std::vector<int>& frames(viewer_->get_frames());
   std::vector<int>& ids(viewer_->get_ids());
-  const int skip_rows(2); //skip first two header rows
-  int time_column(0); //look for time column
-  for (int i(0); i != table_->GetNumberOfColumns(); ++i) {
+  const int skip_rows(1); //skip first three header rows
+  int time_column(-1); //look for time column
+  std::cout << "number of cols:" << table_->GetNumberOfColumns() << std::endl;
+  for (int i(0); i < table_->GetNumberOfColumns(); ++i) {
+    std::cout << "i:" << i << " " << (table_->GetValue(skip_rows-1, i)).ToString() << std::endl; 
     if ((table_->GetValue(skip_rows-1, i)).ToString() == "Time") {
       time_column = i;
     }
@@ -60,13 +62,13 @@ void ImarisReader::initialize_points() {
       id_column_ = i;
     }
   }
+  if (time_column == -1) {
+    std::cout << "time column not found" << std::endl;
+  }
+  if (id_column_ == -1) {
+    std::cout << "id column not found" << std::endl;
+  }
   int time(0);
-  double minx(1e+10);
-  double miny(1e+10);
-  double minz(1e+10);
-  double maxx(-1e+10);
-  double maxy(-1e+10);
-  double maxz(-1e+10);
   if (skip_rows < table_->GetNumberOfRows()) { 
     time = (table_->GetValue(skip_rows, time_column)).ToDouble();
     frames.push_back(skip_rows);
@@ -77,12 +79,12 @@ void ImarisReader::initialize_points() {
         frames.push_back(cnt);
         time = (table_->GetValue(cnt, time_column)).ToDouble();
     }
-    minx = std::min(minx, (table_->GetValue(cnt, 0)).ToDouble());
-    maxx = std::max(maxx, (table_->GetValue(cnt, 0)).ToDouble());
-    miny = std::min(miny, (table_->GetValue(cnt, 1)).ToDouble());
-    maxy = std::max(maxy, (table_->GetValue(cnt, 1)).ToDouble());
-    minz = std::min(minz, (table_->GetValue(cnt, 2)).ToDouble());
-    maxz = std::max(maxz, (table_->GetValue(cnt, 2)).ToDouble());
+    minx_ = std::min(minx_, (table_->GetValue(cnt, 0)).ToDouble());
+    maxx_ = std::max(maxx_, (table_->GetValue(cnt, 0)).ToDouble());
+    miny_ = std::min(miny_, (table_->GetValue(cnt, 1)).ToDouble());
+    maxy_ = std::max(maxy_, (table_->GetValue(cnt, 1)).ToDouble());
+    minz_ = std::min(minz_, (table_->GetValue(cnt, 2)).ToDouble());
+    maxz_ = std::max(maxz_, (table_->GetValue(cnt, 2)).ToDouble());
     int id((table_->GetValue(cnt, id_column_)).ToInt());
     if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
       ids.push_back(id);
@@ -99,8 +101,10 @@ void ImarisReader::initialize_points() {
   }
   std::cout << "average cells per frame:" << ave/(frames.size()-1) <<
     std::endl;
-  std::cout << "dims:" << maxx-minx << " " << maxy-miny << " " << maxz-minz <<
+  std::cout << "dims:" << maxx_-minx_ << " " << maxy_-miny_ << " " << maxz_-minz_ <<
     std::endl;
+  std::cout << "min:" << minx_ << " " << miny_ << " " << minz_ << std::endl;
+  std::cout << "max:" << maxx_ << " " << maxy_ << " " << maxz_ << std::endl;
 }
 
 void ImarisReader::update_points(int current_frame) {
@@ -122,8 +126,14 @@ void ImarisReader::update_points(int current_frame) {
     const float y((table_->GetValue(row,1)).ToDouble());
     const float z((table_->GetValue(row,2)).ToDouble());
     points->SetPoint(i, x, y, z);
-    const unsigned color_index(ids_map_[
+    unsigned color_index(ids_map_[
                                (table_->GetValue(row,id_column_)).ToInt()]);
+    if (x < minx_+200) {
+      color_index = ids_map_[0];
+    }
+    if (y < miny_+200) {
+      color_index = ids_map_[0];
+    }
     viewer_->insert_color(color_index, i);
     for (unsigned j(0); j != n_surface; ++j) {
       float zi(uni_z(rng));

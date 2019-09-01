@@ -78,7 +78,7 @@ void SpatiocyteReader::update_points(int current_frame) {
   vtkSmartPointer<vtkPoints> points(viewer_->get_points()); 
   vtkSmartPointer<vtkUnsignedCharArray> colors(viewer_->get_colors());
   std::mt19937_64& rng(viewer_->get_rng());
-  const int n_surface(300); //number of points on molecule surface
+  const int n_surface(100); //number of points on molecule surface
   const double radius(voxel_radius_);
   const unsigned row(frames[current_frame]);
   if (molecule_sizes_.size() <= current_frame) {
@@ -87,7 +87,7 @@ void SpatiocyteReader::update_points(int current_frame) {
       std::string coord_str((table_->GetValue(row, i)).ToString());
       if (coord_str.size()) {
         std::vector<std::string> coords_str(split(coord_str, " "));
-        molecule_size += coords_str.size()/3; //3D coordinates
+        molecule_size += coords_str.size()/4; //3D coordinates + ID
       }
     }
     molecule_sizes_.push_back(molecule_size);
@@ -106,7 +106,7 @@ void SpatiocyteReader::update_points(int current_frame) {
         const float x(::atof(coords_str[j].c_str()));
         const float y(::atof(coords_str[j+1].c_str()));
         const float z(::atof(coords_str[j+2].c_str()));
-        j += 3;
+        j += 4;
         points->SetPoint(cnt, x, y, z);
         const unsigned species_index(i-1);
         viewer_->insert_color(species_index, cnt);

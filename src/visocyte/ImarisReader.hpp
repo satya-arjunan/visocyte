@@ -37,6 +37,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkPoints.h>
 #include <vtkUnsignedCharArray.h> 
+#include <limits>
 
 class ImarisReader : public Reader {
 public:
@@ -49,8 +50,14 @@ public:
   virtual void reset();
   virtual int get_offset();
 private:
-  int id_column_;
+  int id_column_ = -1;
   std::map<int, int> ids_map_;
+  double minx_ = std::numeric_limits<double>::infinity();
+  double miny_ = std::numeric_limits<double>::infinity();
+  double minz_ = std::numeric_limits<double>::infinity();
+  double maxx_ = -std::numeric_limits<double>::infinity();
+  double maxy_ = -std::numeric_limits<double>::infinity();
+  double maxz_ = -std::numeric_limits<double>::infinity();
 };
 
 #endif /* __ImarisReader_hpp */
