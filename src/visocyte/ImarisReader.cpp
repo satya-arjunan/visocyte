@@ -54,7 +54,8 @@ void ImarisReader::initialize_points() {
   std::cout << "number of cols:" << table_->GetNumberOfColumns() << std::endl;
   for (int i(0); i < table_->GetNumberOfColumns(); ++i) {
     std::cout << "i:" << i << " " << (table_->GetValue(skip_rows-1, i)).ToString() << std::endl; 
-    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Time") {
+    if ((table_->GetValue(skip_rows-1, i)).ToString() == "Time" ||
+        (table_->GetValue(skip_rows-1, i)).ToString() == "TimePointID") {
       time_column = i;
     }
     if ((table_->GetValue(skip_rows-1, i)).ToString() == "Parent" ||
@@ -128,9 +129,11 @@ void ImarisReader::update_points(int current_frame) {
     points->SetPoint(i, x, y, z);
     unsigned color_index(ids_map_[
                                (table_->GetValue(row,id_column_)).ToInt()]);
+    /*
     if (x < minx_+200) {
       color_index = ids_map_[0];
     }
+    */
     if (y < miny_+200) {
       color_index = ids_map_[0];
     }
