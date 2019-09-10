@@ -133,10 +133,10 @@ void ImarisReader::update_points(int current_frame) {
     if (x < minx_+200) {
       color_index = ids_map_[0];
     }
-    */
     if (y < miny_+200) {
       color_index = ids_map_[0];
     }
+    */
     viewer_->insert_color(color_index, i);
     for (unsigned j(0); j != n_surface; ++j) {
       float zi(uni_z(rng));
