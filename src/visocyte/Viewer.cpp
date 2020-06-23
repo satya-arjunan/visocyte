@@ -344,6 +344,14 @@ void Viewer::open_file() {
     QFileInfo fi(filename);
     std::string csv("csv");
     if (fi.suffix().toUtf8().constData() == csv) {
+      std::stringstream filename_ss(fi.fileName().toUtf8().constData());
+      std::vector<std::string> split_strings;
+      std::string str; 
+      while (std::getline(filename_ss, str, '_')) {
+        split_strings.push_back(str);
+      }
+      frame_interval_ = std::stof(split_strings[split_strings.size()-2]);
+      std::cout << "interval:" << frame_interval_ << std::endl;
       std::cout << "extension:" << fi.suffix().toUtf8().constData() <<
         std::endl;
       reset();
