@@ -48,7 +48,7 @@ void SpatiocyteReader::initialize(Viewer* viewer, std::string input_file_name) {
 
 //replace frames with times
 
-void SpatiocyteReader::initialize_points() {
+std::vector<float> SpatiocyteReader::initialize_points() {
   std::vector<int>& frames(viewer_->get_frames());
   std::vector<int>& ids(viewer_->get_ids()); //species id
   std::vector<double>& times(viewer_->get_times());
@@ -69,6 +69,7 @@ void SpatiocyteReader::initialize_points() {
     times.push_back(time);
     frames.push_back(i);
   }
+  return Reader::initialize_points();
 }
 
 

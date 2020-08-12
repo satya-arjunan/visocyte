@@ -46,6 +46,11 @@
 #include <vtkVertexGlyphFilter.h>
 #include <vtkTextActor.h>
 #include <vtkTextProperty.h>
+#include <vtkCubeAxesActor2D.h>
+#include <vtkAxesActor.h>
+#include <vtkCubeAxesActor.h>
+#include <vtkOrientationMarkerWidget.h>
+#include <vtkSuperquadricSource.h>
 #include "vtkGenericOpenGLRenderWindow.h"
 
 class Ui_Viewer;
@@ -62,7 +67,7 @@ public slots:
   virtual void open_file();
   virtual void exit();
   virtual void progress_slider_value_changed(int);
-  virtual void initialize_points();
+  virtual std::vector<float> initialize_points();
   virtual void init_colors();
   virtual void insert_color(const unsigned color_index,
                             const unsigned agent_index);
@@ -82,8 +87,8 @@ public slots:
   std::vector<int>& get_frames();
   std::vector<int>& get_ids();
   std::vector<double>& get_times();
-  vtkSmartPointer<vtkPoints>& get_points();
-  vtkSmartPointer<vtkUnsignedCharArray>& get_colors();
+  vtkPoints* get_points();
+  vtkUnsignedCharArray* get_colors();
   std::mt19937_64& get_rng();
 
 
@@ -112,25 +117,32 @@ private:
   std::random_device rd_;
   std::mt19937_64 rng_;
   std::uniform_real_distribution<> uni_;
-  vtkSmartPointer<vtkQtTableView> tableview_;
+  vtkQtTableView* tableview_;
   Ui_Viewer *ui_;
   int timer_id_;
   int current_frame_;
   std::vector<int> frames_;
   std::vector<int> ids_;
   std::vector<double> times_;
-  vtkSmartPointer<vtkPoints> points_;
-  vtkSmartPointer<vtkPolyData> polydata_;
-  vtkSmartPointer<Reader> reader_;
-  vtkSmartPointer<vtkUnsignedCharArray> colors_;
-  vtkSmartPointer<vtkLookupTable> color_table_;
-  vtkSmartPointer<vtkRenderer> renderer_;
-  vtkSmartPointer<vtkVertexGlyphFilter> glyphFilter_;
-  vtkSmartPointer<vtkPolyDataMapper> mapper_;
-  vtkSmartPointer<vtkActor> actor_;
-  vtkSmartPointer<vtkGenericOpenGLRenderWindow> render_window_;
-  vtkSmartPointer<vtkDataObjectToTable> to_table_;
-  vtkSmartPointer<vtkTextActor> time_text_;
+  vtkPoints* points_;
+  vtkPolyData* polydata_;
+  Reader* reader_;
+  vtkUnsignedCharArray* colors_;
+  vtkLookupTable* color_table_;
+  vtkRenderer* renderer_;
+  vtkVertexGlyphFilter* glyph_filter_;
+  vtkPolyDataMapper* mapper_;
+  vtkActor* actor_;
+  vtkGenericOpenGLRenderWindow* render_window_;
+  vtkDataObjectToTable* to_table_;
+  vtkTextActor* time_text_;
+  vtkTextProperty* text_prop_;
+  vtkCubeAxesActor2D* axes_;
+  vtkAxesActor* axes_actor_;
+  vtkOrientationMarkerWidget* axes_widget_;
+  vtkSmartPointer<vtkSuperquadricSource> superquadricSource;
+  vtkSmartPointer<vtkActor> superquadricActor;
+  vtkSmartPointer<vtkCubeAxesActor> cubeAxesActor;
   QTimer* timer_;
   std::string filename_;
   QAction* play_action_;

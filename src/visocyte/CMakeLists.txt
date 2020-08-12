@@ -59,6 +59,8 @@ target_link_libraries(visocyte
     VTK::RenderingFreeType
     VTK::RenderingFreeTypeFontConfig
     VTK::ViewsQt
+    #VTK::FiltersModeling
+    VTK::RenderingAnnotation
     VTK::GUISupportQt)
 
 target_include_directories(visocyte PUBLIC
@@ -71,5 +73,7 @@ target_include_directories(visocyte PUBLIC
       "$<TARGET_PROPERTY:VTK::ViewsQt,INTERFACE_INCLUDE_DIRECTORIES>"
       "$<TARGET_PROPERTY:VTK::IOInfovis,INTERFACE_INCLUDE_DIRECTORIES>"
       "$<TARGET_PROPERTY:VTK::IOImage,INTERFACE_INCLUDE_DIRECTORIES>"
+      #"$<TARGET_PROPERTY:VTK::FiltersModeling,INTERFACE_INCLUDE_DIRECTORIES>"
+      "$<TARGET_PROPERTY:VTK::RenderingAnnotation,INTERFACE_INCLUDE_DIRECTORIES>"
       "$<TARGET_PROPERTY:VTK::GUISupportQt,INTERFACE_INCLUDE_DIRECTORIES>")
 

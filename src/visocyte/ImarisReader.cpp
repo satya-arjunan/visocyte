@@ -46,7 +46,7 @@ void ImarisReader::initialize(Viewer* viewer, std::string input_file_name) {
   table_ = GetOutput();
 }
 
-void ImarisReader::initialize_points() {
+std::vector<float> ImarisReader::initialize_points() {
   std::vector<int>& frames(viewer_->get_frames());
   std::vector<int>& ids(viewer_->get_ids());
   const int skip_rows(1); //skip first three header rows
@@ -80,12 +80,12 @@ void ImarisReader::initialize_points() {
         frames.push_back(cnt);
         time = (table_->GetValue(cnt, time_column)).ToDouble();
     }
-    minx_ = std::min(minx_, (table_->GetValue(cnt, 0)).ToDouble());
-    maxx_ = std::max(maxx_, (table_->GetValue(cnt, 0)).ToDouble());
-    miny_ = std::min(miny_, (table_->GetValue(cnt, 1)).ToDouble());
-    maxy_ = std::max(maxy_, (table_->GetValue(cnt, 1)).ToDouble());
-    minz_ = std::min(minz_, (table_->GetValue(cnt, 2)).ToDouble());
-    maxz_ = std::max(maxz_, (table_->GetValue(cnt, 2)).ToDouble());
+    minx_ = std::min(minx_, (table_->GetValue(cnt, 0)).ToFloat());
+    maxx_ = std::max(maxx_, (table_->GetValue(cnt, 0)).ToFloat());
+    miny_ = std::min(miny_, (table_->GetValue(cnt, 1)).ToFloat());
+    maxy_ = std::max(maxy_, (table_->GetValue(cnt, 1)).ToFloat());
+    minz_ = std::min(minz_, (table_->GetValue(cnt, 2)).ToFloat());
+    maxz_ = std::max(maxz_, (table_->GetValue(cnt, 2)).ToFloat());
     int id((table_->GetValue(cnt, id_column_)).ToInt());
     if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
       ids.push_back(id);
@@ -100,12 +100,14 @@ void ImarisReader::initialize_points() {
       ave += frames[i] - frames[i-1];
     }
   }
+  std::vector<float> min_max({minx_, miny_, minz_, maxx_, maxy_, maxz_});
   std::cout << "average cells per frame:" << ave/(frames.size()-1) <<
     std::endl;
   std::cout << "dims:" << maxx_-minx_ << " " << maxy_-miny_ << " " << maxz_-minz_ <<
     std::endl;
   std::cout << "min:" << minx_ << " " << miny_ << " " << minz_ << std::endl;
   std::cout << "max:" << maxx_ << " " << maxy_ << " " << maxz_ << std::endl;
+  return min_max;
 }
 
 void ImarisReader::update_points(int current_frame) {

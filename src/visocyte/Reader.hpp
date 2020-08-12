@@ -41,7 +41,9 @@ public:
   Reader();
   ~Reader();
   virtual void initialize(Viewer* viewer, std::string input_file_name) {};
-  virtual void initialize_points() {};
+  virtual std::vector<float> initialize_points() {
+    return std::vector<float>({0, 0, 0, 1, 1, 1});
+  };
   virtual void update_points(int current_frame) {};
   virtual void reset() {};
   virtual int get_offset();

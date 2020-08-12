@@ -45,19 +45,19 @@ public:
   ImarisReader();
   ~ImarisReader();
   virtual void initialize(Viewer* viewer, std::string input_file_name);
-  virtual void initialize_points();
+  virtual std::vector<float> initialize_points();
   virtual void update_points(int current_frame);
   virtual void reset();
   virtual int get_offset();
 private:
   int id_column_ = -1;
   std::map<int, int> ids_map_;
-  double minx_ = std::numeric_limits<double>::infinity();
-  double miny_ = std::numeric_limits<double>::infinity();
-  double minz_ = std::numeric_limits<double>::infinity();
-  double maxx_ = -std::numeric_limits<double>::infinity();
-  double maxy_ = -std::numeric_limits<double>::infinity();
-  double maxz_ = -std::numeric_limits<double>::infinity();
+  float minx_ = std::numeric_limits<float>::infinity();
+  float miny_ = std::numeric_limits<float>::infinity();
+  float minz_ = std::numeric_limits<float>::infinity();
+  float maxx_ = -std::numeric_limits<float>::infinity();
+  float maxy_ = -std::numeric_limits<float>::infinity();
+  float maxz_ = -std::numeric_limits<float>::infinity();
 };
 
 #endif /* __ImarisReader_hpp */

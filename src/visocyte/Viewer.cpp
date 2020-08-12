@@ -47,6 +47,8 @@
 #include <vtkLookupTable.h>
 #include <vtkPNGWriter.h>
 #include <vtkWindowToImageFilter.h>
+#include <vtkTextProperty.h>
+#include <vtkCamera.h>
 #include "vtkAutoInit.h" 
 #include "ui_Viewer.h"
 #include <Viewer.hpp>
@@ -70,18 +72,22 @@ Viewer::Viewer():
   timer_id_(-1),
   rng_(rd_()),
   uni_(-5, 5),
-  points_(vtkSmartPointer<vtkPoints>::New()),
-  polydata_(vtkSmartPointer<vtkPolyData>::New()),
-  reader_(vtkSmartPointer<Reader>::New()),
-  renderer_(vtkSmartPointer<vtkRenderer>::New()),
-  glyphFilter_(vtkSmartPointer<vtkVertexGlyphFilter>::New()),
-  mapper_(vtkSmartPointer<vtkPolyDataMapper>::New()),
-  actor_(vtkSmartPointer<vtkActor>::New()),
-  render_window_(vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New()),
-  to_table_(vtkSmartPointer<vtkDataObjectToTable>::New()),
-  color_table_(vtkSmartPointer<vtkLookupTable>::New()),
-  colors_(vtkSmartPointer<vtkUnsignedCharArray>::New()),
-  time_text_(vtkSmartPointer<vtkTextActor>::New()),
+  points_(vtkPoints::New()),
+  polydata_(vtkPolyData::New()),
+  reader_(Reader::New()),
+  renderer_(vtkRenderer::New()),
+  glyph_filter_(vtkVertexGlyphFilter::New()),
+  mapper_(vtkPolyDataMapper::New()),
+  actor_(vtkActor::New()),
+  render_window_(vtkGenericOpenGLRenderWindow::New()),
+  to_table_(vtkDataObjectToTable::New()),
+  color_table_(vtkLookupTable::New()),
+  colors_(vtkUnsignedCharArray::New()),
+  time_text_(vtkTextActor::New()),
+  text_prop_(vtkTextProperty::New()),
+  axes_(vtkCubeAxesActor2D::New()),
+  axes_actor_(vtkAxesActor::New()),
+  axes_widget_(vtkOrientationMarkerWidget::New()),
   timer_(new QTimer(this)) {
     this->ui_ = new Ui_Viewer;
     this->ui_->setupUi(this);
@@ -119,11 +125,9 @@ void Viewer::read_file(std::string input_file_name) {
 }
 
 void Viewer::write_png() {
-  vtkSmartPointer<vtkWindowToImageFilter> windowToImage = 
-    vtkSmartPointer<vtkWindowToImageFilter>::New();
+  vtkWindowToImageFilter* windowToImage = vtkWindowToImageFilter::New();
   windowToImage->SetInput(this->ui_->qvtkWidget->renderWindow());
-  vtkSmartPointer<vtkPNGWriter> writer =
-    vtkSmartPointer<vtkPNGWriter>::New();
+  vtkPNGWriter* writer = vtkPNGWriter::New();
   std::ostringstream png_file;
   png_file << "image" << std::setw(5) << std::setfill('0') << image_cnt_++
     << ".png"; 
@@ -133,25 +137,130 @@ void Viewer::write_png() {
 }
 
 void Viewer::initialize() {
-  initialize_points();
+  std::vector<float> min_max(initialize_points());
   polydata_->SetPoints(points_);
-  glyphFilter_->SetInputData(polydata_);
-  glyphFilter_->Update();
-  mapper_->SetInputConnection(glyphFilter_->GetOutputPort());
+  glyph_filter_->SetInputData(polydata_);
+  glyph_filter_->Update();
+  mapper_->SetInputConnection(glyph_filter_->GetOutputPort());
   actor_->SetMapper(mapper_);
-  renderer_->AddActor(actor_);
+  //renderer_->AddActor(actor_);
 
-  time_text_->SetInput ("Hello world");
+  superquadricSource = vtkSmartPointer<vtkSuperquadricSource>::New();
+  superquadricSource->SetPhiRoundness(3.1);
+  superquadricSource->SetThetaRoundness(1.0);
+  superquadricSource->Update(); // needed to GetBounds later
+
+  //mapper_->SetInputConnection(superquadricSource->GetOutputPort());
+
+  superquadricActor = vtkSmartPointer<vtkActor>::New();
+  //superquadricActor->SetMapper(mapper_);
+  
+  cubeAxesActor = vtkSmartPointer<vtkCubeAxesActor>::New();
+
+  cubeAxesActor->SetBounds(min_max[0], min_max[3], min_max[1], min_max[4],
+                           min_max[2], min_max[5]);
+  /*
+  std::cout << superquadricSource->GetOutput()->GetBounds()[0] <<  " " <<
+    superquadricSource->GetOutput()->GetBounds()[1] <<  " " <<
+    superquadricSource->GetOutput()->GetBounds()[2] <<  " " <<
+    superquadricSource->GetOutput()->GetBounds()[3] <<  " " <<
+    superquadricSource->GetOutput()->GetBounds()[4] <<  " " <<
+    superquadricSource->GetOutput()->GetBounds()[5] << std::endl;
+    */
+  //cubeAxesActor->SetBounds(superquadricSource->GetOutput()->GetBounds());
+  cubeAxesActor->SetCamera(renderer_->GetActiveCamera());
+  cubeAxesActor->GetTitleTextProperty(0)->SetColor(1.0, 0.0, 0.0);
+  cubeAxesActor->GetLabelTextProperty(0)->SetColor(1.0, 0.0, 0.0);
+
+  cubeAxesActor->GetTitleTextProperty(1)->SetColor(0.0, 1.0, 0.0);
+  cubeAxesActor->GetLabelTextProperty(1)->SetColor(0.0, 1.0, 0.0);
+
+  cubeAxesActor->GetTitleTextProperty(2)->SetColor(0.0, 0.5, 1.0);
+  cubeAxesActor->GetLabelTextProperty(2)->SetColor(0.0, 0.5, 1.0);
+
+  cubeAxesActor->DrawXGridlinesOn();
+  cubeAxesActor->DrawYGridlinesOn();
+  cubeAxesActor->DrawZGridlinesOn();
+
+  cubeAxesActor->SetGridLineLocation(cubeAxesActor->VTK_GRID_LINES_FURTHEST);
+  
+  cubeAxesActor->XAxisMinorTickVisibilityOff();
+  cubeAxesActor->YAxisMinorTickVisibilityOff();
+  cubeAxesActor->ZAxisMinorTickVisibilityOff();
+  cubeAxesActor->GetXAxesGridlinesProperty()->SetColor(0.3, 0.3, 0.3);
+  cubeAxesActor->GetYAxesGridlinesProperty()->SetColor(0.3, 0.3, 0.3);
+  cubeAxesActor->GetZAxesGridlinesProperty()->SetColor(0.3, 0.3, 0.3);
+
+  renderer_->AddActor(cubeAxesActor);
+  renderer_->AddActor(actor_);
+  renderer_->GetActiveCamera()->Azimuth(30);
+  renderer_->GetActiveCamera()->Elevation(30);
+
+
+  time_text_->SetInput("Hello world");
   time_text_->SetPosition2 (500, 500);
   time_text_->GetTextProperty()->SetFontSize (24);
   time_text_->GetTextProperty()->SetColor (1.0, 1.0, 1.0);
-  renderer_->AddActor2D(time_text_);
+  renderer_->AddActor2D(time_text_); 
+
+  ////vtkSmartPointer<vtkCubeAxesActor> p_cubeAxesActor = 
+  ////  vtkSmartPointer<vtkCubeAxesActor>::New();
+  ////p_cubeAxesActor->SetBounds(renderer_->ComputeVisiblePropBounds());
+  ////p_cubeAxesActor->SetCamera(renderer_->GetActiveCamera());
+  ////p_cubeAxesActor->GetTitleTextProperty(0)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetLabelTextProperty(0)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetTitleTextProperty(1)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetLabelTextProperty(1)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetTitleTextProperty(2)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetLabelTextProperty(2)->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetXAxesLinesProperty()->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetYAxesLinesProperty()->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->GetZAxesLinesProperty()->SetColor(1.0, 0.0, 0.0);
+  ////p_cubeAxesActor->DrawXGridlinesOff();
+  ////p_cubeAxesActor->DrawYGridlinesOff();
+  ////p_cubeAxesActor->DrawZGridlinesOff();
+  ////p_cubeAxesActor->XAxisMinorTickVisibilityOff();
+  ////p_cubeAxesActor->YAxisMinorTickVisibilityOff();
+  ////p_cubeAxesActor->ZAxisMinorTickVisibilityOff();
+  ////renderer_->AddActor(p_cubeAxesActor);
+  ////
+  //text_prop_->SetColor(1, 1, 1);
+  //text_prop_->ShadowOn();
+  //text_prop_->SetFontSize(20);
+
+  ////axes->SetInputConnection(normals->GetOutputPort());
+  ////axes->SetCamera(ren->GetActiveCamera());
+  //axes_->SetBounds(min_max[0], min_max[1], min_max[2], min_max[3], min_max[4],
+  //                 min_max[5]);
+  //axes_->SetCamera(renderer_->GetActiveCamera());
+  //axes_->SetLabelFormat("%6.4g");
+  //axes_->SetFlyModeToOuterEdges();
+  //axes_->SetAxisTitleTextProperty(text_prop_);
+  //axes_->SetAxisLabelTextProperty(text_prop_);
+  ////renderer_->AddViewProp(axes_);
+  //renderer_->AddActor(axes_);
+
+  //// axes
+  //axes_widget_->SetDefaultRenderer(renderer_);  
+  //axes_widget_->SetOrientationMarker(axes_actor_);
+  //axes_widget_->SetInteractor(this->ui_->qvtkWidget->interactor());
+  //axes_widget_->SetViewport( 0.0, 0.0, 0.2, 0.2 );
+  //renderer_->AddActor(axes_actor_);
+  //axes_widget_->SetEnabled(1);
+  //axes_widget_->InteractiveOn();
+
+  //axes_->SetBounds(min_max[0], min_max[1], min_max[2], min_max[3],
+  //                         min_max[4], min_max[5]);
+  //axes_->SetCamera(renderer_->GetActiveCamera());
+  //renderer_->AddActor(axes_);
+  //renderer_->AddActor(actor_);
 
   this->ui_->qvtkWidget->setRenderWindow(render_window_);
   this->ui_->qvtkWidget->renderWindow()->AddRenderer(renderer_);
   this->ui_->qvtkWidget->interactor()->Initialize();
-  to_table_->SetInputConnection(glyphFilter_->GetOutputPort());
-  to_table_->SetFieldType(vtkDataObjectToTable::POINT_DATA);
+
+  //to_table_->SetInputConnection(glyph_filter_->GetOutputPort());
+  //to_table_->SetFieldType(vtkDataObjectToTable::POINT_DATA);
   is_initialized_ = true;
   on_timeout();
   renderer_->ResetCamera();
@@ -173,10 +282,11 @@ void Viewer::update_random_points() {
   }
 }
 
-void Viewer::initialize_points() {
-  reader_->initialize_points();
+std::vector<float> Viewer::initialize_points() {
+  std::vector<float> min_max(reader_->initialize_points());
   current_frame_ = -1;
   init_colors();
+  return min_max;
 }
 
 void Viewer::inc_dec_frame() {
@@ -355,12 +465,12 @@ void Viewer::open_file() {
       std::cout << "extension:" << fi.suffix().toUtf8().constData() <<
         std::endl;
       reset();
-      reader_ = vtkSmartPointer<ImarisReader>::New();
+      reader_ = ImarisReader::New();
       read_file(filename.toUtf8().constData());
     }
     else if (fi.suffix().toUtf8().constData() == std::string("spa")) {
       reset();
-      reader_ = vtkSmartPointer<SpatiocyteReader>::New();
+      reader_ = SpatiocyteReader::New();
       read_file(filename.toUtf8().constData());
     }
   }
@@ -468,11 +578,11 @@ std::vector<double>& Viewer::get_times() {
   return times_;
 }
 
-vtkSmartPointer<vtkPoints>& Viewer::get_points() {
+vtkPoints* Viewer::get_points() {
   return points_;
 }
 
-vtkSmartPointer<vtkUnsignedCharArray>& Viewer::get_colors() {
+vtkUnsignedCharArray* Viewer::get_colors() {
   return colors_;
 }
 

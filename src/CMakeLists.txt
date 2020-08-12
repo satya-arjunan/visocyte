@@ -48,6 +48,8 @@ list(APPEND vtk_requested_modules
   VTK::FiltersGeneral
   VTK::FiltersProgrammable
   VTK::FiltersSources
+  #VTK::FiltersModeling
+  VTK::RenderingAnnotation
   VTK::InteractionImage
   VTK::InteractionStyle
   VTK::InteractionWidgets
