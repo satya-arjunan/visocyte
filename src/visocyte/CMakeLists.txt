@@ -15,6 +15,7 @@ set(Srcs
   Visocyte.cpp
   Reader.cpp
   ImarisReader.cpp
+  MotocyteReader.cpp
   SpatiocyteReader.cpp
   Util.cpp
   )
@@ -23,6 +24,7 @@ set(Hdrs
   Viewer.hpp
   Reader.hpp
   ImarisReader.hpp
+  MotocyteReader.hpp
   SpatiocyteReader.hpp
   Util.hpp
   )

@@ -53,6 +53,7 @@
 #include "ui_Viewer.h"
 #include <Viewer.hpp>
 #include <ImarisReader.hpp>
+#include <MotocyteReader.hpp>
 #include <SpatiocyteReader.hpp>
 #include <limits>
 #include <QStyle>
@@ -285,7 +286,7 @@ void Viewer::update_random_points() {
 std::vector<float> Viewer::initialize_points() {
   std::vector<float> min_max(reader_->initialize_points());
   current_frame_ = -1;
-  init_colors();
+  init_colors(int(min_max[6]), int(min_max[7]));
   return min_max;
 }
 
@@ -322,10 +323,11 @@ void Viewer::insert_color(const unsigned color_index,
   colors_->InsertTypedTuple(agent_index, color);
 }
 
-void Viewer::init_colors() {
+void Viewer::init_colors(int min, int max) {
   //color_table_->SetNumberOfColors(ids_.size());
   //color_table_->SetHueRange(0.0,0.667);
-  color_table_->SetTableRange(0, ids_.size());
+  //color_table_->SetTableRange(0, ids_.size());
+  color_table_->SetTableRange(min, max);
   color_table_->Build();
   colors_->SetNumberOfComponents(3);
   colors_->SetName("Colors");
@@ -465,7 +467,14 @@ void Viewer::open_file() {
       std::cout << "extension:" << fi.suffix().toUtf8().constData() <<
         std::endl;
       reset();
-      reader_ = ImarisReader::New();
+      if (split_strings[0] == "df") {
+        std::cout << "opening Motocyte file" << std::endl;
+        reader_ = MotocyteReader::New();
+      }
+      else {
+        std::cout << "opening Imaris file" << std::endl;
+        reader_ = ImarisReader::New();
+      }
       read_file(filename.toUtf8().constData());
     }
     else if (fi.suffix().toUtf8().constData() == std::string("spa")) {

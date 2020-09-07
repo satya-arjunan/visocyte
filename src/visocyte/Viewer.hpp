@@ -68,7 +68,7 @@ public slots:
   virtual void exit();
   virtual void progress_slider_value_changed(int);
   virtual std::vector<float> initialize_points();
-  virtual void init_colors();
+  virtual void init_colors(int min, int max);
   virtual void insert_color(const unsigned color_index,
                             const unsigned agent_index);
   virtual void update_points();
